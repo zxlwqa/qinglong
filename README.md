@@ -21,6 +21,7 @@ task anifx8_checkin.js
 ANIFX8_COOKIE
 ```
 ### 值
+示例：
 ```
 fps_accelerat=56; PHPSESSID=pjptn9og12hrp1obt0ga5lqnr2; theme_mode=white-theme;
 wordpress_logged_in_123456 wordpress_sec_123456
@@ -54,7 +55,8 @@ task ks.js
 ```
 KSJS_COOKIE
 ```
-### 值 示例
+### 值 
+示例：
 ```
 kpn=NEBULA; kpf=ANDROID_PHONE; did=ANDROID_16ef840c2fe8a3d0; c=XIAOMI; ver=13.3;…
 ```
