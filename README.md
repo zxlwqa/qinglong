@@ -67,4 +67,12 @@ kpn=NEBULA; kpf=ANDROID_PHONE; did=ANDROID_16ef840c2fe8a3d0; c=XIAOMI; ver=13.3;
 qs
 axios
 ```
-
+## 获取京东cookie
+1. 电脑浏览器打开京东网址 https://m.jd.com/ 登录
+2. 按键盘F12键打开开发者工具
+3. 在Chrome浏览器按F12，console选项卡下面输入代脚本按回车键，整理出关键的的cookie已经在剪贴板上， 可直接粘贴
+```
+var CV = '单引号里粘贴cookie';
+var CookieValue = CV.match(/pt_pin=.+?;/) + CV.match(/pt_key=.+?;/);
+copy(CookieValue);
+```
