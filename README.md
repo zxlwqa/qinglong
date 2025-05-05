@@ -27,6 +27,8 @@ fps_accelerat=56; PHPSESSID=pjptn9og12hrp1obt0ga5lqnr2; wordpress_logged_in_1234
 ```
 > F12打开开发者工具，应用(Application)选项卡，然后点击左侧Cookie，打开链接，找到字样fps_accelerat，PHPSESSID，wordpress_logged _in，wordpress_sec_
 
+![blog](https://images.zxl.cc.ua/blog/xz2.jpg)
+
 ### 安装依赖
 ```
 axios
