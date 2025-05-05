@@ -23,10 +23,9 @@ ANIFX8_COOKIE
 ### 值
 示例：
 ```
-fps_accelerat=56; PHPSESSID=pjptn9og12hrp1obt0ga5lqnr2; theme_mode=white-theme;
-wordpress_logged_in_123456 wordpress_sec_123456
+fps_accelerat=56; PHPSESSID=pjptn9og12hrp1obt0ga5lqnr2; wordpress_logged_in_123456 wordpress_sec_123456
 ```
-> F12打开开发者工具，网络(Network)选项卡，然后点击签到，打开链接，找到字样fps_accelerat，PHPSESSID，theme_mode，wordpress_logged _in，wordpress_sec_
+> F12打开开发者工具，应用(Application)选项卡，然后点击左侧Cookie，打开链接，找到字样fps_accelerat，PHPSESSID，wordpress_logged _in，wordpress_sec_
 
 ### 安装依赖
 ```
