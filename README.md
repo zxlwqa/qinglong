@@ -27,7 +27,7 @@ https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
 ```
 > F12打开开发者工具，网络(network)选项卡，搜索链接，打开链接，找到Cookie复制
 
-![blog](https://imagesa.zxlwq.dpdns.org/blog/c6ks.webp)
+![blog](https://png.zxlwq.dpdns.org/blog/c6ks.webp)
 
 ### 安装依赖
 ```
