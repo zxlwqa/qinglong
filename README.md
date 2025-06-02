@@ -21,11 +21,11 @@ task anifx8_checkin.js
 ANIFX8_COOKIE
 ```
 ### 值
-示例：
+搜索：
 ```
-fps_accelerat=56; PHPSESSID=pjptn9og12hrp1obt0ga5lqnr2; wordpress_logged_in_1a0f265b951435d6bb1067bc4f95f6a7=zxlwq%7C1746983070%7CvBWDauvv2Z0vQgm25AasWZIn2hAduncvUN71icb58uU%7C4e61d301d6b18cc4c79efe56756f7f038572bef32b543ea1a53ed237c5e351f5; wordpress_sec_1a0f265b951435d6bb1067bc4f95f6a7=zxlwq%7C1746983070%7CvBWDauvv2Z0vQgm25AasWZIn2hAduncvUN71icb58uU%7C01ee3c14169c451c361981cd087d34be8badcf6e12b028a4f287a02afa0b54f4,fps_accelerat=59; PHPSESSID=sd91v7cnjffp637lvln1qr7at4; wordpress_logged_in_1a0f265b951435d6bb1067bc4f95f6a7=lwqzxl%7C1747654890%7C8DqqdKA6kY94X1pdBx4iyOvM1nLdvgkYUeFUtV7FawY%7Cfdca77cbed96e2117d0b90170c7a94fb5b332d26373129a765b4d6c5a802a54a; wordpress_sec_1a0f265b951435d6bb1067bc4f95f6a7=lwqzxl%7C1747654890%7C8DqqdKA6kY94X1pdBx4iyOvM1nLdvgkYUeFUtV7FawY%7C3534f79fac296a3b0c1bd07eb5b7e4cc0f80b6ffd793157a7b8d6aea570bb04d
+https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
 ```
-> F12打开开发者工具，网络(network)选项卡，搜索https://anifx8.com/wp-admin/admin-ajax.php?action=search_box，打开链接，找到Cookie复制
+> F12打开开发者工具，网络(network)选项卡，搜索链接，打开链接，找到Cookie复制
 
 ![blog](https://jpg.zxlwq.dpdns.org/blog/xz2.jpg)
 
