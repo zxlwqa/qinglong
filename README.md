@@ -21,7 +21,7 @@ task anifx8_checkin.js
 ANIFX8_COOKIE
 ```
 ### 值
-> F12打开开发者工具，网络(network)选项卡，搜索链接，打开链接，找到Cookie复制
+> F12打开开发者工具，网络(network)选项卡，搜索链接，打开链接，找到Cookie复制，帐号1,帐号2，用英文逗号分开
 搜索：
 ```
 https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
