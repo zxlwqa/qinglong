@@ -34,9 +34,10 @@ https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
 https://www.yuqiee.com/wp-admin/admin-ajax.php
 ```
 
-### 安装依赖
+### 安装依赖 自动拆分：是
 ```
 axios
+cheerio
 ```
 ---
 
