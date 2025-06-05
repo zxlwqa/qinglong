@@ -21,13 +21,18 @@ task anifx8_checkin.js
 ANIFX8_COOKIE
 ```
 ### 值
+> F12打开开发者工具，网络(network)选项卡，搜索链接，打开链接，找到Cookie复制
 搜索：
 ```
 https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
 ```
-> F12打开开发者工具，网络(network)选项卡，搜索链接，打开链接，找到Cookie复制
-
 ![blog](https://png.zxlwq.dpdns.org/blog/c6ks.webp)
+
+### 宇柒云阁
+
+```
+https://www.yuqiee.com/wp-admin/admin-ajax.php
+```
 
 ### 安装依赖
 ```
