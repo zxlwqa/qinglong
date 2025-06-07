@@ -1,3 +1,10 @@
+// @name         爱工作论坛签到（anifx8.com）
+// @version      1.0.0
+// @description  支持多账号签到，积分查询，Telegram 推送
+// @author       GPT
+// @cron         0 8 * * *  # 每天 8:00 执行
+// @grant        none
+
 const axios = require('axios');
 const cheerio = require('cheerio');
 
@@ -6,7 +13,7 @@ const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_USER_ID = process.env.TG_USER_ID;
 
 if (!COOKIE) {
-    console.log('【ANIFX8】未配置环境变量 ANIFX8_COOKIE，脚本退出');
+    console.log('❌ 未配置环境变量 ANIFX8_COOKIE，脚本终止');
     process.exit(1);
 }
 
@@ -46,27 +53,17 @@ async function signInOne(cookie, index) {
         );
         return res.data;
     } catch (e) {
-        if (e.response) {
-            console.log(`账号${index + 1} 签到异常：${e.response.status} ${JSON.stringify(e.response.data)}`);
-        } else {
-            console.log(`账号${index + 1} 签到异常：${e.message}`);
-        }
+        console.log(`账号${index + 1} 签到异常：${e.message}`);
         return null;
     }
 }
 
 async function fetchContinuousDays(cookie) {
     try {
-        const res = await axios.get(
-            'https://anifx8.com/wp-admin/admin-ajax.php?action=checkin_details_modal',
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                },
-                timeout: 10000,
-            }
-        );
+        const res = await axios.get('https://anifx8.com/wp-admin/admin-ajax.php?action=checkin_details_modal', {
+            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' },
+            timeout: 10000,
+        });
         const $ = cheerio.load(res.data);
         const text = $('div').text();
         const match = text.match(/累计签到\s*(\d+)\s*天/);
@@ -79,16 +76,10 @@ async function fetchContinuousDays(cookie) {
 
 async function fetchTotalPoints(cookie) {
     try {
-        const res = await axios.get(
-            'https://anifx8.com/user/balance',
-            {
-                headers: {
-                    'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
-                },
-                timeout: 10000,
-            }
-        );
+        const res = await axios.get('https://anifx8.com/user/balance', {
+            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' },
+            timeout: 10000,
+        });
         const $ = cheerio.load(res.data);
         const pointText = $('a[href="https://anifx8.com/user/balance"] span.font-bold.c-yellow').first().text().trim();
         const points = parseInt(pointText, 10);
@@ -110,16 +101,14 @@ async function sendTelegram(content) {
             text: content + '\n\nTelegram 消息推送成功',
             parse_mode: 'Markdown',
         });
-        console.log('Telegram 消息推送成功');
+        console.log('✅ Telegram 消息推送成功');
     } catch (e) {
-        console.log('Telegram推送失败：', e.message);
+        console.log('❌ Telegram 推送失败：', e.message);
     }
 }
 
 function formatSignInResult(results, invalidAccounts) {
     let text = `📢 *爱工作论坛签到通知*\n\n`;
-    const now = new Date();
-    text += `_更新时间：${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}_\n\n`;
 
     if (results.length > 0) {
         text += `✅ *签到情况：*\n`;
@@ -141,10 +130,7 @@ function formatSignInResult(results, invalidAccounts) {
     return text;
 }
 
-async function main() {
-    const now = new Date();
-    console.log(`## 开始执行... ${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`);
-
+!(async () => {
     let results = [];
     let invalidAccounts = [];
 
@@ -157,8 +143,8 @@ async function main() {
             invalidAccounts.push(`${userLabel} Cookie无效或已过期`);
             continue;
         }
-        const username = checkRes.username;
 
+        const username = checkRes.username;
         const signInRes = await signInOne(cookie, i);
         if (!signInRes) {
             results.push(`${username} 签到失败`);
@@ -187,6 +173,4 @@ async function main() {
     const message = formatSignInResult(results, invalidAccounts);
     console.log(message);
     await sendTelegram(message);
-}
-
-main();
+})();
