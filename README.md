@@ -7,7 +7,10 @@ token
 ```
 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
 ```
-
+黑名单
+```
+anifx8.js｜hf.js｜yuqiee.js
+```
 
 ## 爱工作论坛签到脚本
 ### 添加脚本文件
