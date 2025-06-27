@@ -1,4 +1,8 @@
 # qinglong
+新建个同步定时任务
+```
+rclone delete huggingface:/qinglong/db/database.sqlite && rclone sync /ql/data huggingface:/qinglong
+```
 青龙拉库
 ```
 https://github.com/zxlwq/qinglong.git
