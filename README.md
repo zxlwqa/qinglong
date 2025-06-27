@@ -7,6 +7,10 @@ token
 ```
 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
 ```
+白名单
+```
+ks.js
+```
 黑名单
 ```
 anifx8.js｜hf.js｜yuqiee.js
