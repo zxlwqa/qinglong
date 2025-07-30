@@ -50,7 +50,10 @@ https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
 ![blog](https://png.zxlwq.dpdns.org/blog/c6ks.webp)
 
 ### 宇柒云阁
-
+### 环境变量名称
+```
+YUQIE_COOKIE
+```
 ```
 https://www.yuqiee.com/wp-admin/admin-ajax.php
 ```
