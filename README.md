@@ -37,7 +37,7 @@ task anifx8_checkin.js
 ```
 0 8 * * *
 ```
-### 环境变量名称
+### 环境变量名称多帐号以‘,’分隔
 ```
 ANIFX8_COOKIE
 ```
@@ -65,6 +65,13 @@ cheerio
 ```
 ---
 
+## huggingface
+```
+HF_URLS
+```
+```
+HF_TOKENS
+```
 ## 快手签到脚本
 添加脚本文件
 ```
