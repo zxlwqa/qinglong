@@ -1,10 +1,6 @@
-// @name         Zxlwq
-// @title        爱工作论坛
-// @version      1.0.0
-// @description  支持多账号签到，积分查询，Telegram 推送
-// @author       Zxlwq
-// @cron         0 8 * * *  # 每天 8:00 执行
-// @grant        none
+#!/usr/bin/env bash
+# cron: 0 8 * * *
+# new Env("爱工作论坛签到")
 
 const axios = require('axios');
 const cheerio = require('cheerio');
