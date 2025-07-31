@@ -1,4 +1,5 @@
-// @name         爱工作论坛签到（anifx8.com）
+// @name         zxlwq
+// @title        爱工作论坛
 // @version      1.0.0
 // @description  支持多账号签到，积分查询，Telegram 推送
 // @author       GPT
