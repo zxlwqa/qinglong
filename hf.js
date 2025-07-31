@@ -1,4 +1,11 @@
-# new Env("Spaces空间保活")
+// @name         zxlwq
+// @title        Spaces空间保活
+// @version      1.0.0
+// @description  支持多账号签到，积分查询，Telegram 推送
+// @author       GPT
+// @cron         0 8 * * *  # 每天 8:00 执行
+// @grant        none
+
 const axios = require("axios");
 
 // 环境变量
