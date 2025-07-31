@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cron: 0 8 * * *
-# new Env("爱工作论坛签到")
+# new Env("爱工作论坛")
 
 const axios = require('axios');
 const cheerio = require('cheerio');
