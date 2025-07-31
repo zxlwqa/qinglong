@@ -1,7 +1,9 @@
-// @name         宇柒云阁自动签到
+// @name         zxlwq
+// @title        宇柒云阁
 // @version      1.0.0
-// @description  多账号签到、积分查询、Telegram推送（适配Qinglong）
-// @cron         30 7 * * *  # 每天 07:30 签到
+// @description  支持多账号签到，积分查询，Telegram 推送
+// @author       zxlwq
+// @cron         0 8 * * *  # 每天 8:00 执行
 // @grant        none
 
 const axios = require('axios');
