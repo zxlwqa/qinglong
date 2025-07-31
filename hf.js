@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cron: 0 */6 * * *
-# new Env("Spaces空间保活")
+# new Env("空间保活")
 
 const axios = require("axios");
 
