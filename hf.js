@@ -5,7 +5,6 @@ const $ = cron: 0 10 * * *
 
 const axios = require("axios");
 
-// 环境变量
 const HF_URLS = process.env.HF_URLS || "";
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_USER_ID = process.env.TG_USER_ID;
@@ -19,8 +18,8 @@ function getTokenForSpace(spaceId) {
     username = spaceId.split("-")[0];
   }
   const tokenMap = {};
-  HF_TOKENS.split(",").forEach(pair => {
-    const [user, token] = pair.split(":").map(s => s.trim());
+  HF_TOKENS.split(",").forEach((pair) => {
+    const [user, token] = pair.split(":").map((s) => s.trim());
     if (user && token) tokenMap[user] = token;
   });
   return tokenMap[username] || null;
@@ -81,6 +80,12 @@ async function sendTelegram(message, isAlert = false) {
   } catch (err) {
     console.log("[ERROR] ❌ Telegram 推送失败：", err.message);
   }
+}
+
+function getTimeStr() {
+  const now = new Date();
+  const local = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 东八区
+  return local.toISOString().replace("T", " ").split(".")[0];
 }
 
 // 主逻辑
@@ -221,10 +226,9 @@ async function checkSpaces() {
     messages.push(statusMsg);
   }
 
-  const finalMessage = `📡 *Spaces空间状态报告*\n\n${messages.join("\n")}`;
-  if (alertFlag) {
-    await sendTelegram(finalMessage, true);
-  }
+  const time = getTimeStr();
+  const finalMessage = `${alertFlag ? "❌" : "✅"} *Spaces空间状态报告*\n🕒 ${time} (UTC+8)\n\n${messages.join("\n")}`;
+  await sendTelegram(finalMessage, alertFlag);
   console.log(finalMessage);
 }
 
