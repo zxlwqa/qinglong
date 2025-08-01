@@ -66,19 +66,20 @@ async function restartSpace(spaceId) {
 async function sendTelegram(message, isAlert = false) {
   if (!TG_BOT_TOKEN || !TG_USER_ID) {
     console.log("[WARN] Telegram 环境变量未设置，跳过推送");
-    return;
+    return false;
   }
   const url = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
   try {
     await axios.post(url, {
       chat_id: TG_USER_ID,
-      text: message + "\n\nTelegram 消息推送成功",
+      text: message,
       parse_mode: "Markdown",
       disable_notification: !isAlert,
     });
-    console.log("[INFO] ✅ Telegram 消息推送成功");
+    return true;
   } catch (err) {
     console.log("[ERROR] ❌ Telegram 推送失败：", err.message);
+    return false;
   }
 }
 
@@ -228,8 +229,10 @@ async function checkSpaces() {
 
   const time = getTimeStr();
   const finalMessage = `${alertFlag ? "❌" : "✅"} *Spaces空间状态报告*\n🕒 ${time} (UTC+8)\n\n${messages.join("\n")}`;
-  await sendTelegram(finalMessage, alertFlag);
+
   console.log(finalMessage);
+  const sendResult = await sendTelegram(finalMessage, alertFlag);
+  console.log(`[INFO] ${sendResult ? "✅" : "❌"} Telegram 消息推送${sendResult ? "成功" : "失败"}`);
 }
 
 !(async () => {
