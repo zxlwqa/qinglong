@@ -1,5 +1,7 @@
-# cron: 0 8 * * *
-# new Env("爱工作论坛")
+/*
+const $ = new Env('宇柒云阁')
+const $ = cron: 0 8 * * *
+*/
 
 const axios = require('axios');
 const cheerio = require('cheerio');
