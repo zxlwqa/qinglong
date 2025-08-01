@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # cron: 0 8 * * *
 # new Env("爱工作论坛")
 
