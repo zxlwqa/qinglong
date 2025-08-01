@@ -1,4 +1,5 @@
 /*
+const $ = cron: 0 */3 * * *
 const $ = new Env('快手极速版')
 
 变量名KSJS_COOKIE
