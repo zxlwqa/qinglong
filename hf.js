@@ -84,7 +84,7 @@ async function sendTelegram(message, isAlert = false) {
 
 function getTimeStr() {
   const now = new Date();
-  const local = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 东八区
+  const local = new Date(now.getTime() + 8 * 60 * 60 * 1000);
   return local.toISOString().replace("T", " ").split(".")[0];
 }
 
