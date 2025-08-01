@@ -1,5 +1,6 @@
 /*
 const $ = new Env('宇柒云阁')
+const $ = cron 0 9 * * *
 */
 
 const axios = require('axios');
