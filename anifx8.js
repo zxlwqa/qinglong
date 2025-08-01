@@ -1,5 +1,5 @@
 /*
-const $ = new Env('宇柒云阁')
+const $ = new Env('爱工作论坛')
 const $ = cron: 0 8 * * *
 */
 
