@@ -1,4 +1,3 @@
-# cron: 0 9 * * *
 # new Env("宇柒云阁")
 
 const axios = require('axios');
