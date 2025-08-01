@@ -1,5 +1,6 @@
 /*
 const $ = new Env('空间保活')
+const $ = cron: 0 10 * * *
 */
 
 const axios = require("axios");
