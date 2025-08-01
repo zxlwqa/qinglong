@@ -1,5 +1,4 @@
 /*
-const $ = cron: 0 */3 * * *
 const $ = new Env('快手极速版')
 变量名KSJS_COOKIE
 点一下去赚钱右下角 这个宝箱，然后去抓包软件查询 
