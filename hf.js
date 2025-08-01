@@ -1,6 +1,6 @@
 /*
-const $ = new Env('空间保活')
 const $ = cron: 0 */4 * * *
+const $ = new Env('空间保活')
 */
 
 const axios = require("axios");
