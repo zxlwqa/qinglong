@@ -3,17 +3,18 @@ const $ = new Env('QQ农场')
 const $ = cron: 0 8 * * *
 */
 
-const https = require('https');
-const { URL } = require('url');
+const axios = require('axios');
 
-const MONTH_HOME_URL = 'https://nc.qzone.qq.com/cgi-bin/cgi_farm_month_signin_home';
-const DAY_SIGN_URL = 'https://nc.qzone.qq.com/cgi-bin/cgi_farm_month_signin_day';
-const JUDGE_SCORE_DRAW_URL = 'https://nc.qzone.qq.com/cgi-bin/cgi_farm_judge_score_draw';
+const HOME_URL = 'https://nc.qzone.qq.com/cgi-bin/cgi_farm_month_signin_home';
+const DAY_URL = 'https://nc.qzone.qq.com/cgi-bin/cgi_farm_month_signin_day';
+const DRAW_URL = 'https://nc.qzone.qq.com/cgi-bin/cgi_farm_judge_score_draw';
 
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_USER_ID = process.env.TG_USER_ID;
 
 const UA = process.env.QZ_UA || 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 QQ/9.0.0';
+
+const MAX_ACCOUNTS = 3;
 
 function sleep(ms) {
   return new Promise(res => setTimeout(res, ms));
@@ -45,136 +46,95 @@ function parseUin(cookie) {
   return /^\d+$/.test(uin) ? uin : null;
 }
 
-function buildHeaders(cookie) {
+function pickMsg(obj) {
+  return obj?.msg || obj?.message || obj?.errmsg || obj?.errMsg || obj?.retmsg || obj?.retMsg || (typeof obj?.ret === 'number' ? `ret=${obj.ret}` : '') || (obj?.raw ? obj.raw.slice(0, 200) : '');
+}
+
+function buildHeaders(cookie, origin = 'https://nc.qzone.qq.com', referer = 'https://nc.qzone.qq.com/') {
   return {
     'User-Agent': UA,
     'Accept': 'application/json, text/plain, */*',
     'Accept-Language': 'zh-CN,zh;q=0.9',
-    'Origin': 'https://nc.qzone.qq.com',
-    'Referer': 'https://nc.qzone.qq.com/',
+    'Origin': origin,
+    'Referer': referer,
     'Cookie': cookie,
-    'Connection': 'keep-alive'
+    'Connection': 'keep-alive',
+    'Content-Type': 'application/x-www-form-urlencoded'
   };
 }
 
-function requestPost(urlStr, headers, body, timeout = 10000) {
-  const url = new URL(urlStr);
-  const options = { method: 'POST', headers, timeout };
-  return new Promise((resolve, reject) => {
-    const req = https.request(url, options, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
+async function requestPost(url, headers, body, timeout = 10000) {
+  try {
+    const res = await axios.post(url, body, {
+      headers,
+      timeout,
+      transformResponse: [(data) => {
+        let jsonStr = data.trim().replace(/^[^(]*\(/, '').replace(/\)\s*;?$/, '');
         try {
-          let body = data.trim().replace(/^[^(]*\(/, '').replace(/\)\s*;?$/, '');
-          resolve(JSON.parse(body));
+          return JSON.parse(jsonStr);
         } catch {
-          resolve({ raw: data });
+          return { raw: data };
         }
-      });
+      }]
     });
-    req.on('error', reject);
-    req.on('timeout', () => req.destroy(new Error('Request timeout')));
-    req.write(body);
-    req.end();
-  });
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
 }
 
 async function monthHome(cookie, uin, gtk) {
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
-  const headers = {
-    ...buildHeaders(cookie),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Content-Length': Buffer.byteLength(postData),
-  };
-  return await requestPost(MONTH_HOME_URL, headers, postData);
+  const headers = buildHeaders(cookie);
+  return await requestPost(HOME_URL, headers, postData);
 }
 
 async function daySignin(cookie, uin, gtk) {
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
-  const headers = {
-    ...buildHeaders(cookie),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Content-Length': Buffer.byteLength(postData),
-  };
-  return await requestPost(DAY_SIGN_URL, headers, postData);
+  const headers = buildHeaders(cookie);
+  return await requestPost(DAY_URL, headers, postData);
 }
 
 async function queryRewards(cookie, uin, gtk) {
   const url = `https://nc.qzone.qq.com/cgi-bin/cgi_farm_buling?act=index`;
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
-  const headers = {
-    ...buildHeaders(cookie),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Content-Length': Buffer.byteLength(postData),
-  };
+  const headers = buildHeaders(cookie);
   return await requestPost(url, headers, postData);
 }
 
 async function getReward(cookie, uin, gtk, rewardId) {
   const url = `https://nc.qzone.qq.com/cgi-bin/cgi_farm_buling?act=get`;
   const postData = `g_tk=${gtk}&uin=${uin}&id=${rewardId}&format=json&_=${Date.now()}`;
-  const headers = {
-    ...buildHeaders(cookie),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Content-Length': Buffer.byteLength(postData),
-  };
+  const headers = buildHeaders(cookie);
   return await requestPost(url, headers, postData);
 }
 
 async function getJudgeScoreDraw(cookie, uin, gtk) {
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
-  const headers = {
-    ...buildHeaders(cookie),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Content-Length': Buffer.byteLength(postData),
-  };
-  return await requestPost(JUDGE_SCORE_DRAW_URL, headers, postData);
+  const headers = buildHeaders(cookie);
+  return await requestPost(DRAW_URL, headers, postData);
 }
 
 async function drawWish(cookie, uin, gtk) {
   const postData = `version=4.1.0&uinY=${uin}&id=0&act=day7Login_draw&platform=14&farmTime=${Math.floor(Date.now() / 1000)}&appid=353`;
-  const headers = {
-    ...buildHeaders(cookie),
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Content-Length': Buffer.byteLength(postData),
-    'Origin': 'https://game.qqnc.qq.com',
-    'Referer': 'https://game.qqnc.qq.com/',
-  };
+  const headers = buildHeaders(cookie, 'https://game.qqnc.qq.com', 'https://game.qqnc.qq.com/');
   return await requestPost('https://nc.qzone.qq.com/cgi-bin/cgi_common_activity?', headers, postData);
-}
-
-function pickMsg(obj) {
-  return obj?.msg || obj?.message || obj?.errmsg || obj?.errMsg || obj?.retmsg || obj?.retMsg || (typeof obj?.ret === 'number' ? `ret=${obj.ret}` : '') || (obj?.raw ? obj.raw.slice(0, 200) : '');
 }
 
 async function sendTelegram(message) {
   if (!TG_BOT_TOKEN || !TG_USER_ID) return false;
-  const payload = JSON.stringify({ chat_id: TG_USER_ID, text: message });
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(payload)
-    }
-  };
-  return new Promise((resolve) => {
-    const req = https.request(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, options, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          resolve(!!result.ok);
-        } catch {
-          resolve(false);
-        }
-      });
+  try {
+    const res = await axios.post(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+      chat_id: TG_USER_ID,
+      text: message
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 5000,
     });
-    req.on('error', () => resolve(false));
-    req.write(payload);
-    req.end();
-  });
+    return res.data.ok === true;
+  } catch {
+    return false;
+  }
 }
 
 async function runOne(index, cookie) {
@@ -196,8 +156,7 @@ async function runOne(index, cookie) {
         dayMsg = '今日已签到';
       }
 
-      await sleep(7000);
-
+      await sleep(3000);
       home = await monthHome(cookie, uin, gtk);
     } else {
       dayMsg = '今日已签到';
@@ -208,37 +167,39 @@ async function runOne(index, cookie) {
     try {
       const rewards = await queryRewards(cookie, uin, gtk);
       if (rewards?.ecode === 0 && Array.isArray(rewards.gift)) {
+        const rewardPromises = [];
         for (const giftObj of rewards.gift) {
           for (const key in giftObj) {
-            const res = await getReward(cookie, uin, gtk, key);
-            if (res?.ecode !== 0) {
-              if (res.ret === -102 || res.ret === -10000) {
-                hasReceived = true;
-              }
-            }
-            await sleep(1500);
+            rewardPromises.push(
+              getReward(cookie, uin, gtk, key).then(res => {
+                if (res?.ecode !== 0) {
+                  if (res.ret === -102 || res.ret === -10000) {
+                    hasReceived = true;
+                  }
+                }
+              }).catch(() => { })
+            );
           }
         }
+        await Promise.all(rewardPromises);
       }
-    } catch {}
-
-    rewardMsg = hasReceived ? '奖励领取: 已领取奖励' : '无可领取奖励';
+    } catch { }
+    rewardMsg = hasReceived ? '已领取' : '无奖励';
 
     let judgeMsg = '';
     try {
       const judgeRes = await getJudgeScoreDraw(cookie, uin, gtk);
-
       if (judgeRes?.ecode === 0) {
-        judgeMsg = '级别评估奖励领取: 成功';
+        judgeMsg = '成功';
       } else if (
         judgeRes?.ret === -102 ||
         judgeRes?.ret === -10000 ||
         judgeRes?.ecode === -101
       ) {
-        judgeMsg = '级别评估奖励领取: 已领取奖励';
+        judgeMsg = '已领取';
       }
     } catch (err) {
-      console.log(`账户${index}: ${uin} 级别评估奖励接口异常:`, err?.message || err);
+      judgeMsg = '接口异常';
     }
 
     let cumRewardMsg = '';
@@ -247,39 +208,35 @@ async function runOne(index, cookie) {
       try {
         const drawRes = await requestPost(
           'https://nc.qzone.qq.com/cgi-bin/cgi_farm_month_signin_draw',
-          {
-            ...buildHeaders(cookie),
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': Buffer.byteLength(`g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`)
-          },
+          buildHeaders(cookie),
           `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`
         );
         if (drawRes?.ecode === 0) {
-          cumRewardMsg = `累积签到奖励：成功领取`;
+          cumRewardMsg = '成功领取';
         } else if (drawRes?.ret === -102 || drawRes?.ret === -10000) {
-          cumRewardMsg = `累积签到奖励：已领取`;
+          cumRewardMsg = '已领取';
         } else {
-          cumRewardMsg = `累积签到奖励：失败(${pickMsg(drawRes)})`;
+          cumRewardMsg = `失败(${pickMsg(drawRes)})`;
         }
       } catch (err) {
-        cumRewardMsg = `累积签到奖励：异常(${err.message || err})`;
+        cumRewardMsg = `异常(${err.message || err})`;
       }
     } else {
-      cumRewardMsg = `累积签到奖励：未到领取天数`;
+      cumRewardMsg = '未到领取天数';
     }
 
     let wishMsg = '';
     try {
       const wishRes = await drawWish(cookie, uin, gtk);
       if (wishRes?.ecode === 0) {
-        wishMsg = `祈愿礼领取：成功`;
+        wishMsg = '成功';
       } else if (wishRes?.ecode === -102) {
-        wishMsg = `祈愿礼领取：已领取`;
+        wishMsg = '已领取';
       } else {
-        wishMsg = `祈愿礼领取：失败(${pickMsg(wishRes)})`;
+        wishMsg = `失败(${pickMsg(wishRes)})`;
       }
     } catch (err) {
-      wishMsg = `祈愿礼领取：异常(${err.message || err})`;
+      wishMsg = `异常(${err.message || err})`;
     }
 
     const monthDays = home?.month_days ?? 0;
@@ -320,11 +277,23 @@ async function main() {
   }
 
   const results = [];
-  for (let i = 0; i < cookies.length; i++) {
+  const concurrency = MAX_ACCOUNTS;
+  let index = 0;
+
+  async function runNext() {
+    if (index >= cookies.length) return;
+    const i = index++;
     const res = await runOne(i + 1, cookies[i]);
-    results.push(res);
-    if (i < cookies.length - 1) await sleep(500);
+    results[i] = res;
+    await runNext();
   }
+
+  const runners = [];
+  for (let i = 0; i < concurrency; i++) {
+    runners.push(runNext());
+  }
+
+  await Promise.all(runners);
 
   let logText = 'QQ农场每日签到\n\n';
   let pushText = 'QQ农场每日签到\n\n';
@@ -335,26 +304,26 @@ async function main() {
     } else {
       logText +=
         `账户${r.index}: ${r.uin}\n` +
-        `签到结果: ${r.dayMsg}\n` +
-        `${r.rewardMsg}\n` +
-        `${r.judgeMsg}\n` +
-        `${r.cumRewardMsg}\n` +
-        `${r.wishMsg}\n` +
+        `每日签到: ${r.dayMsg}\n` +
+        `奖励补领: ${r.rewardMsg}\n` +
+        `农场级别评估: ${r.judgeMsg}\n` +
+        `累积签到奖励: ${r.cumRewardMsg}\n` +
+        `七日祈愿礼: ${r.wishMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
-        `累计签到天数: ${r.maxDay}\n` +
-        `今日是否可领奖: ${r.canDraw}\n` +
+        `累积签到天数: ${r.maxDay}\n` +
+        `累积签到奖励: ${r.canDraw}\n` +
         '--------------------------\n';
 
       pushText +=
         `账户${r.index}: ${r.uin}\n` +
-        `签到结果: ${r.dayMsg}\n` +
-        `${r.rewardMsg}\n` +
-        `${r.judgeMsg}\n` +
-        `${r.cumRewardMsg}\n` +
-        `${r.wishMsg}\n` +
+        `每日签到: ${r.dayMsg}\n` +
+        `奖励补领: ${r.rewardMsg}\n` +
+        `农场级别评估: ${r.judgeMsg}\n` +
+        `累积签到奖励: ${r.cumRewardMsg}\n` +
+        `七日祈愿礼: ${r.wishMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
-        `累计签到天数: ${r.maxDay}\n` +
-        `今日是否可领奖: ${r.canDraw}\n\n`;
+        `累积签到天数: ${r.maxDay}\n` +
+        `累积签到奖励: ${r.canDraw}\n\n`;
     }
   }
 
