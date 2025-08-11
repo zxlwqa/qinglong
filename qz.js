@@ -1,8 +1,6 @@
 /*
-QQ空间农场签到脚本
-简洁版：多账号汇总推送 Telegram，先判断是否签到，未签到才执行签到，签到后延迟更新状态，自动领取奖励（只显示是否已领取），领取级别评估奖励（仅显示成功或已领取）
-Node.js 环境，适用于青龙等平台
-Cron示例：15 9 * * *
+const $ = new Env('QQ农场')
+const $ = cron: 0 8 * * *
 */
 
 const https = require('https');
