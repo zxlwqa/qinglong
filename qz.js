@@ -137,6 +137,47 @@ async function sendTelegram(message) {
   }
 }
 
+// 处理周活跃礼包
+async function handleWeeklyGifts(cookie, uin, gtk) {
+  try {
+    const weeklyStatus = await requestPost(
+      'https://nc.qzone.qq.com/cgi-bin/query?act=2221001',
+      buildHeaders(cookie),
+      `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`
+    );
+
+    if (weeklyStatus?.ecode !== 0 || weeklyStatus?.code !== 1) {
+      return `查询失败(${pickMsg(weeklyStatus)})`;
+    }
+
+    const scoreValues = [15, 30, 60, 90, 120];
+    let resultLines = [];
+
+    for (let week = 1; week <= 4; week++) {
+      const drawMask = weeklyStatus[`l_draw_${week}`] || 0;
+      let claimedScores = [];
+
+      for (let i = 0; i < scoreValues.length; i++) {
+        if ((drawMask & (1 << i)) !== 0) {
+          claimedScores.push(scoreValues[i]);
+        }
+      }
+
+      if (claimedScores.length > 0) {
+        resultLines.push(`第${week}周 已领取礼包: ${claimedScores.join(', ')}`);
+      }
+    }
+
+    if (resultLines.length === 0) {
+      return '无已领取的活跃礼包';
+    }
+
+    return resultLines.join('\n');
+  } catch (e) {
+    return `周活跃大礼包异常(${e.message || e})`;
+  }
+}
+
 async function runOne(index, cookie) {
   const gtk = computeGtk(cookie);
   const uin = parseUin(cookie);
@@ -239,6 +280,9 @@ async function runOne(index, cookie) {
       wishMsg = `异常(${err.message || err})`;
     }
 
+    // 处理周活跃礼包信息
+    const weeklyGiftMsg = await handleWeeklyGifts(cookie, uin, gtk);
+
     const monthDays = home?.month_days ?? 0;
     const maxDay = home?.info?.maxday ?? 0;
     const canDraw = home?.can_draw === 1 ? '是' : '否';
@@ -251,6 +295,7 @@ async function runOne(index, cookie) {
       judgeMsg,
       cumRewardMsg,
       wishMsg,
+      weeklyGiftMsg,
       monthDays,
       maxDay,
       canDraw,
@@ -309,6 +354,7 @@ async function main() {
         `农场级别评估: ${r.judgeMsg}\n` +
         `累积签到奖励: ${r.cumRewardMsg}\n` +
         `七日祈愿礼: ${r.wishMsg}\n` +
+        `周活跃大礼包:\n${r.weeklyGiftMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
         `累积签到奖励: ${r.canDraw}\n` +
@@ -321,6 +367,7 @@ async function main() {
         `农场级别评估: ${r.judgeMsg}\n` +
         `累积签到奖励: ${r.cumRewardMsg}\n` +
         `七日祈愿礼: ${r.wishMsg}\n` +
+        `周活跃大礼包:\n${r.weeklyGiftMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
         `累积签到奖励: ${r.canDraw}\n\n`;
@@ -340,3 +387,4 @@ main().catch(err => {
   console.log(`\n❌ 签到失败\n`);
   process.exit(1);
 });
+
