@@ -410,11 +410,11 @@ async function main() {
   const startTs = Date.now();
 
   // 读取环境变量中的所有账号cookie，按换行拆分
-  let cookies = process.env.QZ_COOKIE || '';
+  let cookies = process.env.QQ_COOKIE || '';
   cookies = cookies.split('\n').map(s => s.trim()).filter(Boolean);
 
   if (cookies.length === 0) {
-    console.log('未检测到 QZ_COOKIE 环境变量');
+    console.log('未检测到 QQ_COOKIE 环境变量');
     console.log('\n✅ 签到任务中止\n');
     process.exit(1);
   }
