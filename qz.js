@@ -137,7 +137,6 @@ async function sendTelegram(message) {
   }
 }
 
-// 处理周活跃礼包
 async function handleWeeklyGifts(cookie, uin, gtk) {
   try {
     const weeklyStatus = await requestPost(
@@ -178,6 +177,49 @@ async function handleWeeklyGifts(cookie, uin, gtk) {
   }
 }
 
+async function handlePassportRewardsAll(cookie, uin, gtk) {
+  const headers = buildHeaders(cookie, 'https://game.qqnc.qq.com', 'https://game.qqnc.qq.com/');
+
+  let receivedIds = [];
+  try {
+    const rewardsStatus = await queryRewards(cookie, uin, gtk);
+    receivedIds = [];
+    if (rewardsStatus?.ecode === 0 && Array.isArray(rewardsStatus.gift)) {
+      for (const giftObj of rewardsStatus.gift) {
+        for (const id in giftObj) {
+          if ((giftObj[id]?.length || 0) > 0) {
+            receivedIds.push(Number(id));
+          }
+        }
+      }
+    }
+  } catch (e) {
+    receivedIds = [];
+  }
+
+  const rewardIds = Array.from({ length: 10 }, (_, i) => i + 1);
+  const toReceiveIds = rewardIds.filter(id => !receivedIds.includes(id));
+
+  if (toReceiveIds.length === 0) {
+    return receivedIds;
+  }
+
+  const tasks = toReceiveIds.map(id => {
+    const postData = `type=1&id=${id}&uinY=${uin}&uIdx=${uin}&farmTime=${Math.floor(Date.now() / 1000)}&appid=353&version=0.1.430.0`;
+    return requestPost('https://nc.qzone.qq.com/cgi-bin/exchange?act=2197002', headers, postData)
+      .then(res => {
+        if (res.direction && (res.direction.includes('领取过') || res.ecode === 0)) {
+          return id;
+        }
+        return null;
+      })
+      .catch(() => null);
+  });
+
+  const results = await Promise.all(tasks);
+  return Array.from(new Set([...receivedIds, ...results.filter(id => id !== null)]));
+}
+
 async function runOne(index, cookie) {
   const gtk = computeGtk(cookie);
   const uin = parseUin(cookie);
@@ -197,7 +239,7 @@ async function runOne(index, cookie) {
         dayMsg = '今日已签到';
       }
 
-      await sleep(3000);
+      await sleep(1000);
       home = await monthHome(cookie, uin, gtk);
     } else {
       dayMsg = '今日已签到';
@@ -280,8 +322,13 @@ async function runOne(index, cookie) {
       wishMsg = `异常(${err.message || err})`;
     }
 
-    // 处理周活跃礼包信息
     const weeklyGiftMsg = await handleWeeklyGifts(cookie, uin, gtk);
+
+    const receivedPassportIds = await handlePassportRewardsAll(cookie, uin, gtk);
+    let passportRewardMsg = '无已领取奖励';
+    if (receivedPassportIds.length > 0) {
+      passportRewardMsg = '已领取 ' + receivedPassportIds.sort((a, b) => a - b).join(' ');
+    }
 
     const monthDays = home?.month_days ?? 0;
     const maxDay = home?.info?.maxday ?? 0;
@@ -296,6 +343,7 @@ async function runOne(index, cookie) {
       cumRewardMsg,
       wishMsg,
       weeklyGiftMsg,
+      passportRewardMsg,
       monthDays,
       maxDay,
       canDraw,
@@ -355,6 +403,7 @@ async function main() {
         `累积签到奖励: ${r.cumRewardMsg}\n` +
         `七日祈愿礼: ${r.wishMsg}\n` +
         `周活跃大礼包:\n${r.weeklyGiftMsg}\n` +
+        `通行证奖励: ${r.passportRewardMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
         `累积签到奖励: ${r.canDraw}\n` +
@@ -368,6 +417,7 @@ async function main() {
         `累积签到奖励: ${r.cumRewardMsg}\n` +
         `七日祈愿礼: ${r.wishMsg}\n` +
         `周活跃大礼包:\n${r.weeklyGiftMsg}\n` +
+        `通行证奖励: ${r.passportRewardMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
         `累积签到奖励: ${r.canDraw}\n\n`;
@@ -387,4 +437,3 @@ main().catch(err => {
   console.log(`\n❌ 签到失败\n`);
   process.exit(1);
 });
-
