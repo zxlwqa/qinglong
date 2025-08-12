@@ -246,7 +246,7 @@ async function handleMinerPassportRewards(cookie, uin, gtk) {
   }
 
   if (redeemedIds.length > 0) {
-    return `已兑换过 ${redeemedIds.join(' ')}`;
+    return `已兑换 ${redeemedIds.join(' ')}`;
   } else {
     return '无奖励';
   }
