@@ -16,14 +16,19 @@ const UA = process.env.QZ_UA || 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Ma
 
 const MAX_ACCOUNTS = 3;
 
+// ==================== 工具函数 ====================
+
+// 延时函数，单位毫秒
 function sleep(ms) {
   return new Promise(res => setTimeout(res, ms));
 }
 
+// 计算从start时间点到现在经过的秒数
 function getTimeSec(start) {
   return Math.round((Date.now() - start) / 1000);
 }
 
+// 计算 g_tk（用于请求签名），基于cookie中的 p_skey 或 skey
 function computeGtk(cookie) {
   const skey = getCookieValue(cookie, 'p_skey') || getCookieValue(cookie, 'skey');
   if (!skey) return null;
@@ -34,11 +39,13 @@ function computeGtk(cookie) {
   return hash & 0x7fffffff;
 }
 
+// 从cookie字符串中提取指定key的值
 function getCookieValue(cookie, key) {
   const match = cookie.match(new RegExp(`(?:^|;\\s*)${key}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+// 解析并返回QQ号（uin）
 function parseUin(cookie) {
   let uin = getCookieValue(cookie, 'p_uin') || getCookieValue(cookie, 'uin') || process.env.QZ_UIN;
   if (!uin) return null;
@@ -46,10 +53,12 @@ function parseUin(cookie) {
   return /^\d+$/.test(uin) ? uin : null;
 }
 
+// 从接口返回对象中提取消息文本，优先级依次为 msg/message/errmsg 等
 function pickMsg(obj) {
   return obj?.msg || obj?.message || obj?.errmsg || obj?.errMsg || obj?.retmsg || obj?.retMsg || (typeof obj?.ret === 'number' ? `ret=${obj.ret}` : '') || (obj?.raw ? obj.raw.slice(0, 200) : '');
 }
 
+// 构建请求头，包含User-Agent、Cookie、Referer等信息
 function buildHeaders(cookie, origin = 'https://nc.qzone.qq.com', referer = 'https://nc.qzone.qq.com/') {
   return {
     'User-Agent': UA,
@@ -63,12 +72,14 @@ function buildHeaders(cookie, origin = 'https://nc.qzone.qq.com', referer = 'htt
   };
 }
 
+// 封装POST请求，自动解析返回JSON（支持JSONP格式）
 async function requestPost(url, headers, body, timeout = 10000) {
   try {
     const res = await axios.post(url, body, {
       headers,
       timeout,
       transformResponse: [(data) => {
+        // 去掉可能存在的 JSONP 包裹函数，解析纯JSON
         let jsonStr = data.trim().replace(/^[^(]*\(/, '').replace(/\)\s*;?$/, '');
         try {
           return JSON.parse(jsonStr);
@@ -83,18 +94,23 @@ async function requestPost(url, headers, body, timeout = 10000) {
   }
 }
 
+// ==================== 核心功能API ====================
+
+// 获取农场月签到主页数据
 async function monthHome(cookie, uin, gtk) {
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
   const headers = buildHeaders(cookie);
   return await requestPost(HOME_URL, headers, postData);
 }
 
+// 执行每日签到操作
 async function daySignin(cookie, uin, gtk) {
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
   const headers = buildHeaders(cookie);
   return await requestPost(DAY_URL, headers, postData);
 }
 
+// 查询当前奖励状态
 async function queryRewards(cookie, uin, gtk) {
   const url = `https://nc.qzone.qq.com/cgi-bin/cgi_farm_buling?act=index`;
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
@@ -102,6 +118,7 @@ async function queryRewards(cookie, uin, gtk) {
   return await requestPost(url, headers, postData);
 }
 
+// 领取指定奖励ID的奖励
 async function getReward(cookie, uin, gtk, rewardId) {
   const url = `https://nc.qzone.qq.com/cgi-bin/cgi_farm_buling?act=get`;
   const postData = `g_tk=${gtk}&uin=${uin}&id=${rewardId}&format=json&_=${Date.now()}`;
@@ -109,34 +126,23 @@ async function getReward(cookie, uin, gtk, rewardId) {
   return await requestPost(url, headers, postData);
 }
 
+// 获取农场等级评分奖励抽奖状态
 async function getJudgeScoreDraw(cookie, uin, gtk) {
   const postData = `g_tk=${gtk}&uin=${uin}&format=json&_=${Date.now()}`;
   const headers = buildHeaders(cookie);
   return await requestPost(DRAW_URL, headers, postData);
 }
 
+// 领取七日祈愿礼
 async function drawWish(cookie, uin, gtk) {
   const postData = `version=4.1.0&uinY=${uin}&id=0&act=day7Login_draw&platform=14&farmTime=${Math.floor(Date.now() / 1000)}&appid=353`;
   const headers = buildHeaders(cookie, 'https://game.qqnc.qq.com', 'https://game.qqnc.qq.com/');
   return await requestPost('https://nc.qzone.qq.com/cgi-bin/cgi_common_activity?', headers, postData);
 }
 
-async function sendTelegram(message) {
-  if (!TG_BOT_TOKEN || !TG_USER_ID) return false;
-  try {
-    const res = await axios.post(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-      chat_id: TG_USER_ID,
-      text: message
-    }, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 5000,
-    });
-    return res.data.ok === true;
-  } catch {
-    return false;
-  }
-}
+// ==================== 奖励处理功能 ====================
 
+// 处理周活跃大礼包，返回领取状态字符串
 async function handleWeeklyGifts(cookie, uin, gtk) {
   try {
     const weeklyStatus = await requestPost(
@@ -177,6 +183,7 @@ async function handleWeeklyGifts(cookie, uin, gtk) {
   }
 }
 
+// 处理通行证所有奖励，自动领取未领取奖励并返回所有已领取ID数组
 async function handlePassportRewardsAll(cookie, uin, gtk) {
   const headers = buildHeaders(cookie, 'https://game.qqnc.qq.com', 'https://game.qqnc.qq.com/');
 
@@ -220,7 +227,7 @@ async function handlePassportRewardsAll(cookie, uin, gtk) {
   return Array.from(new Set([...receivedIds, ...results.filter(id => id !== null)]));
 }
 
-// 日志只打印已兑换过的矿工通行证奖励id，积分不足不打印
+// 仅打印已兑换过的矿工通行证奖励id，积分不足不打印
 async function handleMinerPassportRewards(cookie, uin, gtk) {
   const headers = buildHeaders(cookie, 'https://game.qqnc.qq.com', 'https://game.qqnc.qq.com/');
   const now = Math.floor(Date.now() / 1000);
@@ -245,18 +252,23 @@ async function handleMinerPassportRewards(cookie, uin, gtk) {
   }
 }
 
+// ==================== 账号执行主流程 ====================
+
 async function runOne(index, cookie) {
+  // 计算签名和解析uin
   const gtk = computeGtk(cookie);
   const uin = parseUin(cookie);
   if (!uin) return { index, uin: '未知', error: '解析 uin 失败' };
   if (gtk == null) return { index, uin, error: '解析 g_tk 失败' };
 
   try {
+    // 获取主页信息，检测今天是否签到过
     let home = await monthHome(cookie, uin, gtk);
     const todaySigninBefore = home?.today_signin === 1;
 
     let dayMsg = '';
     if (!todaySigninBefore) {
+      // 今日未签到，执行签到
       const day = await daySignin(cookie, uin, gtk);
       dayMsg = pickMsg(day) || '签到完成';
 
@@ -270,6 +282,7 @@ async function runOne(index, cookie) {
       dayMsg = '今日已签到';
     }
 
+    // 补领奖励
     let rewardMsg = '';
     let hasReceived = false;
     try {
@@ -294,6 +307,7 @@ async function runOne(index, cookie) {
     } catch { }
     rewardMsg = hasReceived ? '已领取' : '无奖励';
 
+    // 农场等级评估奖励领取
     let judgeMsg = '';
     try {
       const judgeRes = await getJudgeScoreDraw(cookie, uin, gtk);
@@ -310,6 +324,7 @@ async function runOne(index, cookie) {
       judgeMsg = '接口异常';
     }
 
+    // 累积签到奖励领取
     let cumRewardMsg = '';
     const rewardDays = [2, 4, 7, 12, 18, 25];
     if (rewardDays.includes(home?.month_days)) {
@@ -333,6 +348,7 @@ async function runOne(index, cookie) {
       cumRewardMsg = '未到领取天数';
     }
 
+    // 七日祈愿礼领取
     let wishMsg = '';
     try {
       const wishRes = await drawWish(cookie, uin, gtk);
@@ -347,15 +363,17 @@ async function runOne(index, cookie) {
       wishMsg = `异常(${err.message || err})`;
     }
 
+    // 周活跃礼包领取情况
     const weeklyGiftMsg = await handleWeeklyGifts(cookie, uin, gtk);
 
+    // 通行证奖励领取情况
     const receivedPassportIds = await handlePassportRewardsAll(cookie, uin, gtk);
     let passportRewardMsg = '无已领取奖励';
     if (receivedPassportIds.length > 0) {
       passportRewardMsg = '已领取 ' + receivedPassportIds.sort((a, b) => a - b).join(' ');
     }
 
-    //矿工通行证奖励日志函数
+    // 矿工通行证奖励日志
     const passportMinerRewardMsg = await handleMinerPassportRewards(cookie, uin, gtk);
 
     const monthDays = home?.month_days ?? 0;
@@ -386,9 +404,12 @@ async function runOne(index, cookie) {
   }
 }
 
+// ==================== 主入口函数 ====================
+
 async function main() {
   const startTs = Date.now();
 
+  // 读取环境变量中的所有账号cookie，按换行拆分
   let cookies = process.env.QZ_COOKIE || '';
   cookies = cookies.split('\n').map(s => s.trim()).filter(Boolean);
 
@@ -399,9 +420,10 @@ async function main() {
   }
 
   const results = [];
-  const concurrency = MAX_ACCOUNTS;
+  const concurrency = MAX_ACCOUNTS; // 并发数限制
   let index = 0;
 
+  // 递归执行账号签到任务，控制并发数
   async function runNext() {
     if (index >= cookies.length) return;
     const i = index++;
@@ -410,6 +432,7 @@ async function main() {
     await runNext();
   }
 
+  // 启动多个并发任务
   const runners = [];
   for (let i = 0; i < concurrency; i++) {
     runners.push(runNext());
@@ -417,6 +440,7 @@ async function main() {
 
   await Promise.all(runners);
 
+  // 日志与推送内容拼接
   let logText = 'QQ农场每日签到\n\n';
   let pushText = 'QQ农场每日签到\n\n';
   for (const r of results) {
@@ -437,6 +461,7 @@ async function main() {
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
         `是否可领取累积奖励: ${r.canDraw}\n` +
+        '--------------------------\n';
 
       pushText +=
         `账户${r.index}: ${r.uin}\n` +
@@ -450,10 +475,12 @@ async function main() {
         `矿工通行证奖励：${r.passportMinerRewardMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
-        `是否可领取累积奖励: ${r.canDraw}\n`;
+        `是否可领取累积奖励: ${r.canDraw}\n\n`;
     }
   }
   console.log(logText);
+
+  // 发送Telegram消息推送
   const tgResult = await sendTelegram(pushText);
   if (tgResult) {
     console.log('Telegram 推送成功\n');
@@ -461,6 +488,30 @@ async function main() {
     console.log('Telegram 推送失败或未配置\n');
   }
 }
+
+// ==================== Telegram推送函数 ====================
+
+async function sendTelegram(message) {
+  if (!TG_BOT_TOKEN || !TG_USER_ID) {
+    console.log('未配置 Telegram Bot Token 或用户ID，跳过推送');
+    return false;
+  }
+  try {
+    const res = await axios.post(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+      chat_id: TG_USER_ID,
+      text: message
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 5000,
+    });
+    return res.data.ok === true;
+  } catch (error) {
+    console.log('Telegram 推送异常:', error.message || error);
+    return false;
+  }
+}
+
+// ==================== 脚本启动入口 ====================
 
 main().catch(err => {
   console.error('脚本执行异常:', err);
