@@ -168,7 +168,7 @@ async function handleWeeklyGifts(cookie, uin, gtk) {
     }
 
     if (resultLines.length === 0) {
-      return '无已领取的活跃礼包';
+      return '无活跃礼包';
     }
 
     return resultLines.join('\n');
@@ -218,6 +218,31 @@ async function handlePassportRewardsAll(cookie, uin, gtk) {
 
   const results = await Promise.all(tasks);
   return Array.from(new Set([...receivedIds, ...results.filter(id => id !== null)]));
+}
+
+// 日志只打印已兑换过的矿工通行证奖励id，积分不足不打印
+async function handleMinerPassportRewards(cookie, uin, gtk) {
+  const headers = buildHeaders(cookie, 'https://game.qqnc.qq.com', 'https://game.qqnc.qq.com/');
+  const now = Math.floor(Date.now() / 1000);
+
+  let redeemedIds = [];
+
+  for (let id = 1; id <= 10; id++) {
+    const postData = `type=1&id=${id}&uIdx=${uin}&platform=14&uinY=${uin}&act=ex&version=4.1.0&farmTime=${now}&appid=353`;
+    try {
+      const res = await requestPost('https://nc.qzone.qq.com/cgi-bin/act_ios_passport?', headers, postData);
+      if (res.direction === '您已经兑换过了~') {
+        redeemedIds.push(id);
+      }
+    } catch (e) {
+    }
+  }
+
+  if (redeemedIds.length > 0) {
+    return `已兑换过 ${redeemedIds.join(' ')}`;
+  } else {
+    return '无奖励';
+  }
 }
 
 async function runOne(index, cookie) {
@@ -330,6 +355,9 @@ async function runOne(index, cookie) {
       passportRewardMsg = '已领取 ' + receivedPassportIds.sort((a, b) => a - b).join(' ');
     }
 
+    //矿工通行证奖励日志函数
+    const passportMinerRewardMsg = await handleMinerPassportRewards(cookie, uin, gtk);
+
     const monthDays = home?.month_days ?? 0;
     const maxDay = home?.info?.maxday ?? 0;
     const canDraw = home?.can_draw === 1 ? '是' : '否';
@@ -344,6 +372,7 @@ async function runOne(index, cookie) {
       wishMsg,
       weeklyGiftMsg,
       passportRewardMsg,
+      passportMinerRewardMsg,
       monthDays,
       maxDay,
       canDraw,
@@ -402,12 +431,12 @@ async function main() {
         `农场级别评估: ${r.judgeMsg}\n` +
         `累积签到奖励: ${r.cumRewardMsg}\n` +
         `七日祈愿礼: ${r.wishMsg}\n` +
-        `周活跃大礼包:\n${r.weeklyGiftMsg}\n` +
+        `周活跃大礼包:${r.weeklyGiftMsg}\n` +
         `通行证奖励: ${r.passportRewardMsg}\n` +
+        `矿工通行证奖励：${r.passportMinerRewardMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
-        `累积签到奖励: ${r.canDraw}\n` +
-        '--------------------------\n';
+        `是否可领取累积奖励: ${r.canDraw}\n` +
 
       pushText +=
         `账户${r.index}: ${r.uin}\n` +
@@ -416,24 +445,24 @@ async function main() {
         `农场级别评估: ${r.judgeMsg}\n` +
         `累积签到奖励: ${r.cumRewardMsg}\n` +
         `七日祈愿礼: ${r.wishMsg}\n` +
-        `周活跃大礼包:\n${r.weeklyGiftMsg}\n` +
+        `周活跃大礼包:${r.weeklyGiftMsg}\n` +
         `通行证奖励: ${r.passportRewardMsg}\n` +
+        `矿工通行证奖励：${r.passportMinerRewardMsg}\n` +
         `本月已签到天数: ${r.monthDays}\n` +
         `累积签到天数: ${r.maxDay}\n` +
-        `累积签到奖励: ${r.canDraw}\n\n`;
+        `是否可领取累积奖励: ${r.canDraw}\n`;
     }
   }
-
-  console.log(logText.trim());
-  const ok = await sendTelegram(pushText.trim());
-  console.log(ok ? 'Telegram 推送成功' : 'Telegram 推送失败');
-
-  console.log(`\n✅ 签到任务完成，用时 ${getTimeSec(startTs)} 秒\n`);
+  console.log(logText);
+  const tgResult = await sendTelegram(pushText);
+  if (tgResult) {
+    console.log('Telegram 推送成功\n');
+  } else {
+    console.log('Telegram 推送失败或未配置\n');
+  }
 }
 
 main().catch(err => {
-  const errMsg = err?.stack || err;
-  console.log(`脚本致命错误：${errMsg}`);
-  console.log(`\n❌ 签到失败\n`);
+  console.error('脚本执行异常:', err);
   process.exit(1);
 });
