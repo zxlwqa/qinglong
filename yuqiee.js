@@ -15,7 +15,7 @@ if (!COOKIE) {
     process.exit(1);
 }
 
-const COOKIES = COOKIE.split(',').map(c => c.trim()).filter(Boolean);
+const COOKIES = COOKIE.split(/\n+/).map(c => c.trim()).filter(Boolean);
 
 async function isCookieValid(cookie) {
     try {
@@ -144,8 +144,11 @@ function formatSignInResult(results, invalidAccounts) {
         const gainedExp = signInRes.data?.points || 0;
 
         let statusText = '';
-        if (signInRes.error === false || (signInRes.error === true && signInRes.msg.includes('今日已签到'))) {
-            statusText = `${userEmail} 今日已签到：连续签到 ${continuousDays ?? '未知'} 天，积分 +${gainedPoints}，经验 +${gainedExp}，总积分 ${totalPoints ?? '未知'}`;
+
+        if (signInRes.error === false) {
+            statusText = `${userEmail} 签到成功：连续签到 ${continuousDays ?? '未知'} 天，积分 +${gainedPoints}，经验 +${gainedExp}，总积分 ${totalPoints ?? '未知'}`;
+        } else if (signInRes.error === true && signInRes.msg.includes('今日已签到')) {
+            statusText = `${userEmail} 今日已签到：连续签到 ${continuousDays ?? '未知'} 天，总积分 ${totalPoints ?? '未知'}`;
         } else {
             statusText = `${userEmail} 签到异常：${signInRes.msg || '未知错误'}`;
         }
