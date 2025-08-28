@@ -5,6 +5,7 @@ const $ = cron: 0 8 * * *
 
 const axios = require('axios');
 const cheerio = require('cheerio');
+const https = require('https');
 
 const COOKIE = process.env.ANIFX8_COOKIE;
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
@@ -15,13 +16,21 @@ if (!COOKIE) {
     process.exit(1);
 }
 
-const COOKIES = COOKIE.split(',').map(c => c.trim()).filter(Boolean);
+const COOKIES = COOKIE
+    .split(/\r?\n/)
+    .map(c => c.trim())
+    .filter(Boolean);
+
+const axiosInstance = axios.create({
+    httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    timeout: 10000,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+});
 
 async function checkCookieValid(cookie, index) {
     try {
-        const res = await axios.get('https://anifx8.com/wp-admin/admin-ajax.php?action=get_current_user', {
-            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' },
-            timeout: 10000,
+        const res = await axiosInstance.get('https://anifx8.com/wp-admin/admin-ajax.php?action=get_current_user', {
+            headers: { 'Cookie': cookie }
         });
         if (res.data && res.data.is_logged_in) {
             const user = res.data.user_data;
@@ -31,22 +40,20 @@ async function checkCookieValid(cookie, index) {
     } catch (e) {
         console.log(`账号${index + 1} Cookie检测异常：${e.message}`);
     }
-    return { valid: false };
+    return { valid: false, username: `账号${index + 1}` };
 }
 
 async function signInOne(cookie, index) {
     try {
-        const res = await axios.post(
+        const res = await axiosInstance.post(
             'https://anifx8.com/wp-admin/admin-ajax.php',
             new URLSearchParams({ action: 'user_checkin' }),
             {
                 headers: {
                     'Cookie': cookie,
-                    'User-Agent': 'Mozilla/5.0',
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'Referer': 'https://anifx8.com/user-sign?tab=signin',
-                },
-                timeout: 10000,
+                    'Referer': 'https://anifx8.com/user-sign?tab=signin'
+                }
             }
         );
         return res.data;
@@ -58,10 +65,7 @@ async function signInOne(cookie, index) {
 
 async function fetchContinuousDays(cookie) {
     try {
-        const res = await axios.get('https://anifx8.com/wp-admin/admin-ajax.php?action=checkin_details_modal', {
-            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' },
-            timeout: 10000,
-        });
+        const res = await axiosInstance.get('https://anifx8.com/wp-admin/admin-ajax.php?action=checkin_details_modal', { headers: { 'Cookie': cookie } });
         const $ = cheerio.load(res.data);
         const text = $('div').text();
         const match = text.match(/累计签到\s*(\d+)\s*天/);
@@ -74,16 +78,11 @@ async function fetchContinuousDays(cookie) {
 
 async function fetchTotalPoints(cookie) {
     try {
-        const res = await axios.get('https://anifx8.com/user/balance', {
-            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' },
-            timeout: 10000,
-        });
+        const res = await axiosInstance.get('https://anifx8.com/user/balance', { headers: { 'Cookie': cookie } });
         const $ = cheerio.load(res.data);
         const pointText = $('a[href="https://anifx8.com/user/balance"] span.font-bold.c-yellow').first().text().trim();
         const points = parseInt(pointText, 10);
-        if (!isNaN(points)) {
-            return points;
-        }
+        if (!isNaN(points)) return points;
     } catch (e) {
         console.log(`获取总积分失败：${e.message}`);
     }
@@ -149,8 +148,8 @@ function formatSignInResult(results, invalidAccounts) {
             continue;
         }
 
-        const continuousDays = await fetchContinuousDays(cookie);
-        const totalPoints = await fetchTotalPoints(cookie);
+        const continuousDays = await fetchContinuousDays(cookie) ?? '未知';
+        const totalPoints = await fetchTotalPoints(cookie) ?? '未知';
 
         let gainedPoints = 0, gainedExp = 0;
         if (signInRes.data) {
@@ -159,8 +158,8 @@ function formatSignInResult(results, invalidAccounts) {
         }
 
         let statusText = '';
-        if (signInRes.error === false || (signInRes.error === true && signInRes.msg.includes('今日已签到'))) {
-            statusText = `${username} 今日已签到：连续签到 ${continuousDays ?? '未知'} 天，积分 +${gainedPoints}，经验 +${gainedExp}，总积分 ${totalPoints ?? '未知'}`;
+        if (signInRes.error !== true || (signInRes.msg && signInRes.msg.includes('今日已签到'))) {
+            statusText = `${username} 今日已签到：连续签到 ${continuousDays} 天，积分 +${gainedPoints}，经验 +${gainedExp}，总积分 ${totalPoints}`;
         } else {
             statusText = `${username} 签到异常：${signInRes.msg || '未知错误'}`;
         }
