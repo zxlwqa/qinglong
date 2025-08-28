@@ -10,6 +10,15 @@ const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 const TG_USER_ID = process.env.TG_USER_ID;
 const HF_TOKENS = process.env.HF_TOKENS || "";
 
+const tokenMap = {};
+HF_TOKENS.split(/\r?\n/)
+  .map(s => s.trim())
+  .filter(Boolean)
+  .forEach((pair) => {
+    const [user, token] = pair.split("｜").map((s) => s.trim());
+    if (user && token) tokenMap[user] = token;
+  });
+
 function getTokenForSpace(spaceId) {
   let username = "";
   if (spaceId.includes("/")) {
@@ -17,11 +26,6 @@ function getTokenForSpace(spaceId) {
   } else if (spaceId.includes("-")) {
     username = spaceId.split("-")[0];
   }
-  const tokenMap = {};
-  HF_TOKENS.split(",").forEach((pair) => {
-    const [user, token] = pair.split(":").map((s) => s.trim());
-    if (user && token) tokenMap[user] = token;
-  });
   return tokenMap[username] || null;
 }
 
@@ -89,9 +93,8 @@ function getTimeStr() {
   return local.toISOString().replace("T", " ").split(".")[0];
 }
 
-// 主逻辑
 async function checkSpaces() {
-  const rawSpaces = HF_URLS.split(",").map((s) => s.trim()).filter(Boolean);
+  const rawSpaces = HF_URLS.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
 
   if (rawSpaces.length === 0) {
     console.error("[ERROR] ❌ 未配置 HF_URLS 环境变量");
