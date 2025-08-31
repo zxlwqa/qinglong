@@ -23,7 +23,10 @@ ks.js
 ```
 anifx8.js｜hf.js｜yuqiee.js｜qq.js｜qa.js
 ```
-
+TG通知反代
+```
+https://cf.zxla.dpdns.org
+```
 # 爱工作论坛签到脚本
 ### 环境变量名称
 > 多帐号以‘ 回车换行 ’分隔
