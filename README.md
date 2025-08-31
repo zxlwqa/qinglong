@@ -3,42 +3,29 @@
 ```
 rclone delete huggingface:/qinglong/db/database.sqlite && rclone sync /ql/data huggingface:/qinglong
 ```
-青龙拉库
+### 青龙拉库
 ```
 https://github.com/zxlwq/qinglong.git
 ```
-token
+```
+https://github.com/RayWangQvQ/BiliBiliToolPro.git
+```
+### Token
 ```
 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
 ```
-白名单
+### 白名单
 ```
 ks.js
 ```
-黑名单
+### 黑名单
 ```
-anifx8.js｜hf.js｜yuqiee.js
+anifx8.js｜hf.js｜yuqiee.js｜qq.js｜qa.js
 ```
 
-## 爱工作论坛签到脚本
-### 添加脚本文件
-```
-anifx8_checkin.js
-```
-### 定时任务名称
-```
-爱工作论坛签到
-```
-### 定时任务命令/脚本
-```
-task anifx8_checkin.js
-```
-### 定时规则
-```
-0 8 * * *
-```
+# 爱工作论坛签到脚本
 ### 环境变量名称
-> 多帐号以‘ , ’分隔
+> 多帐号以‘ 回车换行 ’分隔
 ```
 ANIFX8_COOKIE
 ```
@@ -48,8 +35,6 @@ ANIFX8_COOKIE
 ```
 https://anifx8.com/wp-admin/admin-ajax.php?action=search_box
 ```
-![blog](https://png.zxlwq.dpdns.org/blog/c6ks.webp)
-
 ### 宇柒云阁
 ### 环境变量名称
 ```
@@ -58,12 +43,15 @@ YUQIE_COOKIE
 ```
 https://www.yuqiee.com/wp-admin/admin-ajax.php
 ```
-
 ### 安装依赖 自动拆分：是
 ```
 axios
 cheerio
 ```
+
+![blog](https://png.zxlwq.dpdns.org/blog/c6ks.webp)
+
+
 ---
 
 ## huggingface
@@ -74,22 +62,6 @@ HF_URLS
 HF_TOKENS
 ```
 ## 快手签到脚本
-添加脚本文件
-```
-ks.js
-```
-### 定时任务名称
-```
-快手
-```
-### 定时任务命令/脚本
-```
-task ks.js
-```
-### 定时规则
-```
-*/20 * * * *
-```
 ### 环境变量名称
 ```
 KSJS_COOKIE
