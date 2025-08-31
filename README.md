@@ -11,6 +11,10 @@ https://github.com/zxlwq/qinglong.git
 ```
 https://github.com/RayWangQvQ/BiliBiliToolPro.git
 ```
+### 白名单
+```
+bili_task_.+\.sh
+```
 ### Token
 ```
 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
