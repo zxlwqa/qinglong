@@ -1,9 +1,7 @@
-/**
- * 香蕉视频 APP
- * 手机号#密码
- * export BANANA_ACCOUNT = '18888888888#123456'
- * 多账号用 & 或换行
- */
+/*
+const $ = new Env('香蕉视频')
+const $ = cron: 0 1 * * *
+*/
 const initScript = require('../utils/initScript')
 const { $, notify, sudojia, checkUpdate } = initScript('香蕉视频');
 
